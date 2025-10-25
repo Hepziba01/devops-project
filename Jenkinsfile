@@ -1,36 +1,52 @@
 pipeline {
     agent any
 
+    environment {
+        // Your Docker Hub username (must be correct!)
+        DOCKERHUB_USER = 'Hepziba01' 
+        IMAGE_NAME = "${DOCKERHUB_USER}/devops-project:latest"
+    }
+
     stages {
         stage('1. Checkout from GitHub') {
             steps {
-                // This connects to the SCM you configured in the job settings
+                // Uses the SCM configured in the Jenkins job settings
                 checkout scm 
             }
         }
 
-        stage('2. Build, Push (or Skip) & Deployment Prep') {
+        stage('2. Build and Tag Docker Image (via WSL)') {
             steps {
-                // We use bat for all commands because Jenkins is running natively on Windows.
-                bat '''
-                    REM The following commands must be run as a single block on Windows
-                    
-                    REM 2a. Build Docker Image
-                    docker build -t my-web-app .
-                    
-                    REM 2b. Skip Push for now
-                    echo "Skipping Docker Hub push for now."
-                    
-                    REM 2c. Skip Ansible deployment for now
-                    wsl.exe echo "Skipping Ansible deployment for now."
-                '''
+                // This command tells Windows (bat) to launch the WSL terminal (wsl.exe) 
+                // and then run the 'docker build' command inside Linux.
+                bat "wsl.exe docker build -t ${IMAGE_NAME} ."
             }
         }
-        
-        stage('3. Docker Hub & Ansible (Will be skipped)') {
-             steps {
-                 echo 'This stage will be skipped as the execution is bundled in Stage 2'
-             }
+
+        stage('3. Push to Docker Hub (via WSL)') {
+            steps {
+                // We are using the credentials you set up previously.
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    // Log in and push commands are run inside WSL.
+                    bat "wsl.exe docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                    bat "wsl.exe docker push ${IMAGE_NAME}"
+                }
+            }
+        }
+
+        stage('4. Deploy with Ansible (via WSL)') {
+            steps {
+                // Runs the Ansible playbook, also fully inside the WSL environment.
+                echo 'Starting Ansible deployment...'
+                bat 'wsl.exe ansible-playbook playbook.yml -i inventory'
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up: log out of the registry inside WSL
+            bat 'wsl.exe docker logout'
         }
     }
 }
