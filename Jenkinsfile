@@ -10,13 +10,15 @@ pipeline {
         IMAGE_NAME = "${DOBERHUB_USER}/devops-project:latest"
         WSL_PATH = 'C:/Windows/System32/wsl.exe' 
     }
+// ... (start of pipeline)
 
     stages {
         stage('1. Checkout from GitHub') {
             steps {
-                echo "Pulling code from ${env.GITHUB_USER}/devops-project"
-                // Uses GITHUB_USER for the repository URL
-                git branch: 'main', url: "https://github.com/${env.GITHUB_USER}/devops-project.git" 
+                checkout scm 
+                
+                // CRITICAL FIX: Add the execute permission to the deploy.sh script inside WSL
+                bat "${env.WSL_PATH} chmod +x deploy.sh" 
             }
         }
 
