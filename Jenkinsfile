@@ -25,21 +25,16 @@ pipeline {
                 script {
                     echo "--- Executing full CI/CD via deploy.sh in WSL ---"
                     
-                    // Securely retrieve credentials by ID 'dockerhub-creds'
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                         
-                        // Execute deploy.sh via WSL, passing the four required arguments:
-                        // $1=Docker_Login_User, $2=Docker_Password, $3=Docker_Image_Repo_User, $4=Image_Name
-                        bat "${WSL_PATH} ./deploy.sh ${DOCKER_USER} ${DOCKER_PASS} ${DOCKERHUB_USER} ${IMAGE_NAME}"
+                        // THIS IS THE FIX: Run chmod and deploy.sh in ONE single, continuous WSL session
+                        bat """
+                            ${env.WSL_PATH} /bin/bash -c "
+                                chmod +x deploy.sh; 
+                                ./deploy.sh ${DOCKER_USER} ${DOCKER_PASS} ${DOCKERHUB_USER} ${IMAGE_NAME}
+                            "
+                        """
                     }
                 }
             }
         }
-    }
-    
-    post {
-        always {
-            echo "CI/CD Pipeline Completed. Final status is ${currentBuild.result}"
-        }
-    }
-}
