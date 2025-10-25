@@ -3,50 +3,53 @@ pipeline {
 
     environment {
         // Your Docker Hub username (must be correct!)
-        DOCKERHUB_USER = 'Hepziba01' 
+        DOCKERHUB_USER = 'Hepziba01' // <-- REPLACE THIS
         IMAGE_NAME = "${DOCKERHUB_USER}/devops-project:latest"
+        
+        // This is the CRITICAL change: defining the path to WSL/Docker in the script environment
+        WSL_PATH = 'C:/Windows/System32/wsl.exe' 
     }
 
     stages {
         stage('1. Checkout from GitHub') {
             steps {
-                // Uses the SCM configured in the Jenkins job settings
+                // Ensure SCM settings are used
                 checkout scm 
             }
         }
 
-        stage('2. Build and Tag Docker Image (via WSL)') {
+        stage('2. Build and Push Docker Image') {
             steps {
-                // This command tells Windows (bat) to launch the WSL terminal (wsl.exe) 
-                // and then run the 'docker build' command inside Linux.
-                bat "wsl.exe docker build -t ${IMAGE_NAME} ."
-            }
-        }
-
-        stage('3. Push to Docker Hub (via WSL)') {
-            steps {
-                // We are using the credentials you set up previously.
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                    // Log in and push commands are run inside WSL.
-                    bat "wsl.exe docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
-                    bat "wsl.exe docker push ${IMAGE_NAME}"
+                script {
+                    // Use bat to call WSL to run the Docker commands inside Linux
+                    echo "--- Building Docker Image via WSL ---"
+                    bat "${WSL_PATH} docker build -t ${IMAGE_NAME} ."
+                    
+                    // Push to Docker Hub using the 'dockerhub-creds' credential ID
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                        echo "--- Pushing Image to Docker Hub via WSL ---"
+                        bat "${WSL_PATH} docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                        bat "${WSL_PATH} docker push ${IMAGE_NAME}"
+                    }
                 }
             }
         }
 
-        stage('4. Deploy with Ansible (via WSL)') {
+        stage('3. Deploy with Ansible') {
             steps {
-                // Runs the Ansible playbook, also fully inside the WSL environment.
-                echo 'Starting Ansible deployment...'
-                bat 'wsl.exe ansible-playbook playbook.yml -i inventory'
+                script {
+                    echo "--- Starting Ansible Deployment via WSL ---"
+                    // Execute Ansible playbook using WSL
+                    bat "${WSL_PATH} ansible-playbook playbook.yml -i inventory"
+                }
             }
         }
     }
 
     post {
         always {
-            // Clean up: log out of the registry inside WSL
-            bat 'wsl.exe docker logout'
+            // Log out of Docker Hub
+            bat "${WSL_PATH} docker logout"
         }
     }
 }
