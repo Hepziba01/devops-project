@@ -1,14 +1,10 @@
 #!/bin/bash
     
-# Load environment variables for Docker Hub login (passed from Jenkins)
-DOCKER_USER=$1       # CORRECT: Will be filled by Jenkins with 'hepziba'
+# Load environment variables (passed from Jenkins)
+DOCKER_USER=$1
 DOCKER_PASS=$2
-DOCKERHUB_USER=$3    # CORRECT: Will be filled by Jenkins with 'hepziba'
-
-IMAGE_NAME="${DOCKERHUB_USER}/devops-project:latest"
-
-# ... rest of the script (uses $DOCKER_USER and $DOCKER_PASS)
-echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+DOCKERHUB_USER=$3
+IMAGE_NAME=$4  # Now receiving the full image name as the 4th argument
 
 
 # --- 1. Build Docker Image ---
