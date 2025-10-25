@@ -10,7 +10,7 @@
     container_name: devops-web-app
 
   tasks:
-    - name: Ensure Docker Python module is installed
+    #- name: Ensure Docker Python module is installed
       # Ansible needs this Python package on the deployment host to talk to Docker
       #pip:
         #name: docker
