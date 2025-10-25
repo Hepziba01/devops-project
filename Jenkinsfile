@@ -15,8 +15,9 @@ pipeline {
                 echo "Pulling code from ${env.GITHUB_USER}/devops-project"
                 checkout scm 
                 
-                // CRITICAL FIX: Add the execute permission to the deploy.sh script inside WSL
-                bat "${env.WSL_PATH} chmod +x deploy.sh" 
+                // FINAL FIX V4: The initial chmod, which is now redundant in the next stage,
+                // but keeps the pipeline flowing if left. We'll simplify the file structure.
+                
             }
         }
 
@@ -38,3 +39,11 @@ pipeline {
                 }
             }
         }
+    } // <--- FINAL CLOSING BRACE FOR THE 'stages' BLOCK
+
+    post {
+        always {
+            echo "CI/CD Pipeline Completed. Final status is ${currentBuild.result}"
+        }
+    }
+} // <--- FINAL CLOSING BRACE FOR THE 'pipeline' BLOCK
