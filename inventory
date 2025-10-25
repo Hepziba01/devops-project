@@ -1,0 +1,8 @@
+[deployment]
+# Replace with the actual IP address of your Deployment Target Server (second PC/VM)
+[Your-Deployment-Server-IP] 
+
+[deployment:vars]
+# Replace with the username you use to log into the Deployment Target Server
+ansible_user=your_target_username 
+ansible_connection=ssh
