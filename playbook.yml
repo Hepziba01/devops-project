@@ -12,9 +12,9 @@
   tasks:
     - name: Ensure Docker Python module is installed
       # Ansible needs this Python package on the deployment host to talk to Docker
-      pip:
-        name: docker
-        state: present
+      #pip:
+        #name: docker
+        #state: present
 
     - name: Pull the latest Docker image from the registry
       community.docker.docker_image:
