@@ -1,33 +1,36 @@
 pipeline {
-    agent any // Run on any available Jenkins agent
+    agent any
 
     stages {
         stage('1. Checkout from GitHub') {
             steps {
-                // This pulls your code from the 'main' branch of your repo
-                git branch: 'main', url: 'https://github.com/Hepziba01/devops-project.git'
+                // This connects to the SCM you configured in the job settings
+                checkout scm 
             }
         }
 
-        stage('2. Build Docker Image') {
+        stage('2. Build, Push (or Skip) & Deployment Prep') {
             steps {
-                script {
-                    // CORRECTED TO 'bat'
-                    bat 'docker build -t my-web-app .'
-                }
+                // We use bat for all commands because Jenkins is running natively on Windows.
+                bat '''
+                    REM The following commands must be run as a single block on Windows
+                    
+                    REM 2a. Build Docker Image
+                    docker build -t my-web-app .
+                    
+                    REM 2b. Skip Push for now
+                    echo "Skipping Docker Hub push for now."
+                    
+                    REM 2c. Skip Ansible deployment for now
+                    wsl.exe echo "Skipping Ansible deployment for now."
+                '''
             }
         }
         
-        stage('3. (Optional) Push to Docker Hub') {
-            steps {
-                // Change the 'echo' command to 'bat' as well
-                bat 'echo Skipping Docker Hub push for now.'
-            }
+        stage('3. Docker Hub & Ansible (Will be skipped)') {
+             steps {
+                 echo 'This stage will be skipped as the execution is bundled in Stage 2'
+             }
         }
-        
-        stage('4. (Future) Deploy with Ansible') {
-            steps {
-                // Use 'wsl' prefix as planned, but call it with 'bat'
-                bat 'wsl.exe echo Skipping Ansible deployment for now.' 
-            }
-        }
+    }
+}
