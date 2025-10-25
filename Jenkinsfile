@@ -10,11 +10,14 @@ pipeline {
     }
 
     stages {
-        stage('1. Checkout Code') { // Simplified stage name
+        stage('1. Checkout and Prepare Script') { // Renamed stage
             steps {
                 echo "Pulling code from ${env.GITHUB_USER}/devops-project"
                 checkout scm 
-                // Removed the problematic chmod step
+                
+                // FINAL FIX V11: Explicitly convert line endings AFTER checkout
+                echo "Converting deploy.sh line endings to Unix format"
+                powershell "${env.WSL_PATH} dos2unix deploy.sh" 
             }
         }
 
@@ -25,8 +28,7 @@ pipeline {
                     
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                         
-                        // FINAL FIX V10: Execute the script explicitly with 'bash'
-                        // This bypasses the need for chmod +x
+                        // Execute the script explicitly with 'bash'
                         powershell "${env.WSL_PATH} bash ./deploy.sh ${DOCKER_USER} ${DOCKER_PASS} ${DOCKERHUB_USER} ${IMAGE_NAME}"
                     }
                 }
