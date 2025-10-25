@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         // --- Corrected Variables ---
-        GITHUB_USER = 'Hepziba01'
-        DOCKERHUB_USER = 'hepziba'
-        IMAGE_NAME = "${DOCKERHUB_USER}/devops-project:latest"
+        GITHUB_USER = 'Hepziba01'         // Your GitHub username
+        DOCKERHUB_USER = 'hepziba'        // Your Docker Hub username
+        IMAGE_NAME = "${DOCKERHUB_USER}/devops-project:latest" // Image name using Docker Hub user
         WSL_PATH = 'C:/Windows/System32/wsl.exe'
     }
 
@@ -14,6 +14,7 @@ pipeline {
             steps {
                 echo "Pulling code from ${env.GITHUB_USER}/devops-project"
                 checkout scm
+                // Note: The chmod +x is now correctly inside the single bash execution below
             }
         }
 
@@ -24,7 +25,7 @@ pipeline {
 
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
 
-                        // FINAL FIX V6: Use BAT to call WSL which runs BASH to execute the commands
+                        // FINAL FIX V7: Use BAT to call WSL which runs BASH to execute the commands in ONE session
                         bat """
                             ${env.WSL_PATH} /bin/bash -c "
                                 chmod +x deploy.sh;
