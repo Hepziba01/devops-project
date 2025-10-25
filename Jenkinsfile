@@ -2,18 +2,19 @@ pipeline {
     agent any
 
     environment {
-        // Your Docker Hub username (must be correct!)
-        DOCKERHUB_USER = 'Hepziba01' // <-- REPLACE THIS
+        // CRITICAL: REPLACE 'Hepziba01' with your correct Docker Hub/GitHub username
+        DOCKERHUB_USER = 'Hepziba01' 
         IMAGE_NAME = "${DOCKERHUB_USER}/devops-project:latest"
         
-        // This is the CRITICAL change: defining the path to WSL/Docker in the script environment
+        // Explicit path to WSL executable for reliable execution on Windows
         WSL_PATH = 'C:/Windows/System32/wsl.exe' 
     }
 
     stages {
         stage('1. Checkout from GitHub') {
             steps {
-                // Ensure SCM settings are used
+                echo "Pulling code from ${env.DOCKERHUB_USER}/devops-project"
+                // Uses the SCM configuration from the Jenkins job setup
                 checkout scm 
             }
         }
@@ -21,13 +22,14 @@ pipeline {
         stage('2. Build and Push Docker Image') {
             steps {
                 script {
-                    // Use bat to call WSL to run the Docker commands inside Linux
                     echo "--- Building Docker Image via WSL ---"
+                    // Execute Docker build command inside the WSL environment
                     bat "${WSL_PATH} docker build -t ${IMAGE_NAME} ."
                     
-                    // Push to Docker Hub using the 'dockerhub-creds' credential ID
+                    echo "--- Pushing Image to Docker Hub ---"
+                    // Use the securely stored credentials (ID: dockerhub-creds)
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                        echo "--- Pushing Image to Docker Hub via WSL ---"
+                        // Login and push commands run inside WSL
                         bat "${WSL_PATH} docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                         bat "${WSL_PATH} docker push ${IMAGE_NAME}"
                     }
@@ -39,7 +41,8 @@ pipeline {
             steps {
                 script {
                     echo "--- Starting Ansible Deployment via WSL ---"
-                    // Execute Ansible playbook using WSL
+                    // Execute the Ansible playbook using WSL
+                    // This runs playbook.yml against the inventory file
                     bat "${WSL_PATH} ansible-playbook playbook.yml -i inventory"
                 }
             }
@@ -48,8 +51,9 @@ pipeline {
 
     post {
         always {
-            // Log out of Docker Hub
+            // Log out of Docker Hub for security cleanup
             bat "${WSL_PATH} docker logout"
+            echo "Deployment finished. Check target server IP."
         }
     }
 }
