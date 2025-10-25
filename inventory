@@ -1,6 +1,2 @@
 [deployment]
-10.4.20.161
-
-[deployment:vars]
-ansible_user=hepziba
-ansible_connection=ssh
+localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
