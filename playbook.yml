@@ -1,19 +1,20 @@
 ---
 # This is the Playbook that Ansible will execute
 - name: Deploy Containerized Web App
-  hosts: deployment  
-  become: yes        
+  hosts: deployment  # This targets the 'deployment' group defined in the inventory file
+  become: yes        # Use sudo/root privileges for Docker operations
 
   vars:
+    # CRITICAL: Replace 'hepziba' with your Docker Hub Username
     image_name: hepziba/devops-project:latest 
     container_name: devops-web-app
 
   tasks:
-    # DELETED OR COMMENTED OUT THIS TASK:
-    # - name: Ensure Docker Python module is installed
-    #   pip:
-    #     name: docker
-    #     state: present
+    - name: Ensure Docker Python module is installed
+      # Ansible needs this Python package on the deployment host to talk to Docker
+      pip:
+        name: docker
+        state: present
 
     - name: Pull the latest Docker image from the registry
       community.docker.docker_image:
@@ -25,13 +26,14 @@
       community.docker.docker_container:
         name: "{{ container_name }}"
         state: absent
-      ignore_errors: yes 
+      ignore_errors: yes # Ignore errors if the container doesn't exist yet
 
     - name: Run the new container from the pulled image
       community.docker.docker_container:
         name: "{{ container_name }}"
         image: "{{ image_name }}"
         state: started
+        # Map public port 80 to container port 3000
         ports:
           - "80:3000" 
         restart_policy: always
