@@ -1,2 +1,8 @@
 [deployment]
-localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+74.225.142.103 
+
+[deployment:vars]
+ansible_user=azureuser 
+ansible_connection=ssh
+# Use the path to the key INSIDE WSL
+ansible_ssh_private_key_file=/root/.ssh/azure_vm_key.pem
